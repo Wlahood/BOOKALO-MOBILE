@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../models/home_response.dart';
 import '../repositories/home_repository.dart';
 import '../services/api_client.dart';
+import 'event_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
@@ -211,7 +212,12 @@ class _HomeScreenState extends State<HomeScreen> {
                             ].where((s) => s.trim().isNotEmpty).join(' • '),
                           ),
                           onTap: () {
-                            // TODO: push EventDetailScreen(id: e.id)
+                            Navigator.of(context).push(
+                              MaterialPageRoute(
+                                builder: (_) =>
+                                    EventDetailScreen(eventId: e.id),
+                              ),
+                            );
                           },
                         );
                       },

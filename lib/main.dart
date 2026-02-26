@@ -1,5 +1,5 @@
 import 'package:flutter/material.dart';
-import 'screens/home_screen.dart';
+import 'screens/app_shell.dart';
 
 void main() {
   runApp(const BookaloApp());
@@ -13,7 +13,7 @@ class BookaloApp extends StatelessWidget {
     return MaterialApp(
       title: 'Bookalo',
       theme: ThemeData(useMaterial3: true),
-      home: const HomeScreen(),
+      home: const AppShell(),
     );
   }
 }
