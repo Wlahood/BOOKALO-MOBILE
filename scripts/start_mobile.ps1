@@ -55,6 +55,16 @@ if (-not $alreadyOnline) {
 Write-Host "-> devices:"
 & $AdbExe devices
 
+# 2) Backup GTP
+$backupGptPs1  = ".\scripts\backup_bookalo_mobile_gpt.ps1"
+
+if (Test-Path $backupGptPs1) {
+  Invoke-BackupSafely "backup_bookalo_mobile_gpt.ps1" { powershell -ExecutionPolicy Bypass -File $backupGptPs1 }
+} else {
+  Write-Warning "backup_bookalo_mobile_gpt.ps1 non trovato (skip)"
+}
+
+
 # 3) Wait for device
 Write-Host "-> wait-for-device"
 & $AdbExe wait-for-device | Out-Null

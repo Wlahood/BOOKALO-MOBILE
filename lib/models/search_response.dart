@@ -17,7 +17,14 @@ class SearchData {
 
   factory SearchData.fromJson(Map<String, dynamic> json) {
     List<T> parseList<T>(dynamic v, T Function(Map<String, dynamic>) fromJson) {
-      final list = (v as List?) ?? const [];
+      dynamic raw = v;
+
+      // Supporta sia List diretta sia wrapper Laravel ResourceCollection: { "data": [...] }
+      if (raw is Map<String, dynamic> && raw['data'] is List) {
+        raw = raw['data'];
+      }
+
+      final list = (raw as List?) ?? const [];
       return list.map((e) => fromJson(e as Map<String, dynamic>)).toList();
     }
 
