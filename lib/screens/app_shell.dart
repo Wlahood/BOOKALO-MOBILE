@@ -6,6 +6,8 @@ import 'search_screen.dart';
 import 'login_screen.dart';
 import '../services/auth_controller.dart';
 
+import 'my_entities_screen.dart';
+
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
 
@@ -126,6 +128,16 @@ class ProfilePlaceholderScreen extends StatelessWidget {
             ),
             const SizedBox(height: 6),
             Text(user?.email ?? ''),
+            const SizedBox(height: 18),
+            FilledButton.icon(
+              onPressed: () {
+                Navigator.of(context).push(
+                  MaterialPageRoute(builder: (_) => const MyEntitiesScreen()),
+                );
+              },
+              icon: const Icon(Icons.store_mall_directory_outlined),
+              label: const Text('I miei locali / Le mie band'),
+            ),
             const SizedBox(height: 18),
             FilledButton.icon(
               onPressed: () => AuthController.instance.logout(),

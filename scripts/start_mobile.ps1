@@ -56,6 +56,16 @@ Write-Host "-> devices:"
 & $AdbExe devices
 
 # 2) Backup GTP
+
+function Invoke-BackupSafely([string]$Label, [scriptblock]$Action) {
+  Write-Host "-> $Label"
+  try {
+    & $Action
+  } catch {
+    Write-Warning "$Label fallito: $($_.Exception.Message) (continuo comunque con git)"
+  }
+}
+
 $backupGptPs1  = ".\scripts\backup_bookalo_mobile_gpt.ps1"
 
 if (Test-Path $backupGptPs1) {
