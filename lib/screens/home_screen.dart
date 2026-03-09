@@ -1,12 +1,16 @@
-// lib/screens/home_screen.dart
 import 'package:flutter/material.dart';
+
+import '../models/events_page.dart';
 import '../models/home_response.dart';
+import '../models/location_filters.dart';
 import '../repositories/home_repository.dart';
 import '../services/api_client.dart';
+import '../widgets/event_web_card.dart';
 import 'event_detail_screen.dart';
 
 class HomeScreen extends StatefulWidget {
   const HomeScreen({super.key});
+
   @override
   State<HomeScreen> createState() => _HomeScreenState();
 }
@@ -16,35 +20,16 @@ class _HomeScreenState extends State<HomeScreen> {
 
   HomeResponse? home;
   bool loading = true;
-  bool loadingMore = false;
   String? error;
 
-  String? selectedProvince;
-  String? selectedCity;
-
-  final events = <EventCompact>[];
-  String? nextUrl;
-
-  final scrollController = ScrollController();
+  String? selectedRegion;
+  String? selectedProvinceCode;
 
   @override
   void initState() {
     super.initState();
     repo = HomeRepository(ApiClient());
     _load();
-
-    scrollController.addListener(() async {
-      if (scrollController.position.pixels >=
-          scrollController.position.maxScrollExtent - 300) {
-        await _loadMore();
-      }
-    });
-  }
-
-  @override
-  void dispose() {
-    scrollController.dispose();
-    super.dispose();
   }
 
   Future<void> _load() async {
@@ -55,63 +40,74 @@ class _HomeScreenState extends State<HomeScreen> {
 
     try {
       final res = await repo.fetchHome(
-        provinceCode: selectedProvince,
-        city: selectedCity,
+        region: selectedRegion,
+        provinceCode: selectedProvinceCode,
         perPage: 20,
       );
 
+      final availableProvinces = res.available.provinces;
+      final incomingProvince = res.filters.provinceCode ?? selectedProvinceCode;
+
       setState(() {
         home = res;
-        events
-          ..clear()
-          ..addAll(res.data.events.data);
-        nextUrl = res.data.events.links.next;
+        selectedRegion = res.filters.region ?? selectedRegion;
+        selectedProvinceCode =
+            availableProvinces.any((p) => p.code == incomingProvince)
+            ? incomingProvince
+            : null;
       });
     } catch (e) {
-      setState(() => error = e.toString());
-    } finally {
-      setState(() => loading = false);
-    }
-  }
-
-  Future<void> _loadMore() async {
-    if (loadingMore || nextUrl == null) return;
-    setState(() => loadingMore = true);
-
-    try {
-      final page = await repo.fetchNextPage(nextUrl!);
       setState(() {
-        events.addAll(page.data);
-        nextUrl = page.links.next;
+        error = e.toString();
       });
-    } catch (_) {
-      // volutamente silenzioso: non blocchiamo la Home per un loadMore fallito
     } finally {
-      setState(() => loadingMore = false);
+      setState(() {
+        loading = false;
+      });
     }
   }
 
-  Future<void> _onProvinceChanged(String? value) async {
+  Future<void> _onRegionChanged(String? value) async {
     setState(() {
-      selectedProvince = value;
-      selectedCity =
-          null; // reset city: nel backend cities dipende dalla provincia
+      selectedRegion = value;
+      selectedProvinceCode = null;
     });
     await _load();
   }
 
-  Future<void> _onCityChanged(String? value) async {
-    setState(() => selectedCity = value);
+  Future<void> _onProvinceChanged(String? value) async {
+    setState(() {
+      selectedProvinceCode = value;
+    });
+    await _load();
+  }
+
+  Future<void> _resetFilters() async {
+    setState(() {
+      selectedRegion = null;
+      selectedProvinceCode = null;
+    });
     await _load();
   }
 
   @override
   Widget build(BuildContext context) {
-    final availableProvinces = home?.data.available.provinces ?? const [];
-    final availableCities = home?.data.available.cities ?? const [];
+    final availableRegions = home?.available.regions ?? const <RegionOption>[];
+    final availableProvinces =
+        home?.available.provinces ?? const <ProvinceOption>[];
+    final events = home?.events ?? const <EventListItem>[];
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Bookalo')),
+      appBar: AppBar(
+        title: const Text('Bookalo'),
+        actions: [
+          IconButton(
+            tooltip: 'Reset filtri',
+            onPressed: _resetFilters,
+            icon: const Icon(Icons.filter_alt_off),
+          ),
+        ],
+      ),
       body: RefreshIndicator(
         onRefresh: _load,
         child: loading
@@ -134,98 +130,102 @@ class _HomeScreenState extends State<HomeScreen> {
                 children: [
                   Padding(
                     padding: const EdgeInsets.all(12),
-                    child: Row(
+                    child: Column(
                       children: [
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            value: selectedProvince,
-                            items: [
-                              const DropdownMenuItem(
-                                value: null,
-                                child: Text('Tutte le province'),
-                              ),
-                              ...availableProvinces.map(
-                                (p) =>
-                                    DropdownMenuItem(value: p, child: Text(p)),
-                              ),
-                            ],
-                            onChanged: (v) => _onProvinceChanged(v),
-                            decoration: const InputDecoration(
-                              labelText: 'Provincia',
-                              border: OutlineInputBorder(),
-                            ),
+                        DropdownButtonFormField<String?>(
+                          initialValue: selectedRegion,
+                          decoration: const InputDecoration(
+                            labelText: 'Regione',
+                            border: OutlineInputBorder(),
                           ),
+                          items: [
+                            const DropdownMenuItem<String?>(
+                              value: null,
+                              child: Text('Tutte le regioni'),
+                            ),
+                            ...availableRegions.map(
+                              (region) => DropdownMenuItem<String?>(
+                                value: region.name,
+                                child: Text(region.name),
+                              ),
+                            ),
+                          ],
+                          onChanged: _onRegionChanged,
                         ),
-                        const SizedBox(width: 12),
-                        Expanded(
-                          child: DropdownButtonFormField<String>(
-                            value: selectedCity,
-                            items: [
-                              const DropdownMenuItem(
-                                value: null,
-                                child: Text('Tutte le città'),
-                              ),
-                              ...availableCities.map(
-                                (c) =>
-                                    DropdownMenuItem(value: c, child: Text(c)),
-                              ),
-                            ],
-                            onChanged: selectedProvince == null
-                                ? null
-                                : (v) => _onCityChanged(v),
-                            decoration: const InputDecoration(
-                              labelText: 'Città',
-                              border: OutlineInputBorder(),
-                            ),
+                        const SizedBox(height: 12),
+                        DropdownButtonFormField<String?>(
+                          initialValue: selectedProvinceCode,
+                          decoration: const InputDecoration(
+                            labelText: 'Provincia',
+                            border: OutlineInputBorder(),
                           ),
+                          items: [
+                            const DropdownMenuItem<String?>(
+                              value: null,
+                              child: Text('Tutte le province'),
+                            ),
+                            ...availableProvinces.map(
+                              (province) => DropdownMenuItem<String?>(
+                                value: province.code,
+                                child: Text(province.label),
+                              ),
+                            ),
+                          ],
+                          onChanged: _onProvinceChanged,
                         ),
                       ],
                     ),
                   ),
                   const Divider(height: 1),
                   Expanded(
-                    child: ListView.builder(
-                      controller: scrollController,
-                      itemCount: events.length + (loadingMore ? 1 : 0),
-                      itemBuilder: (context, index) {
-                        if (index >= events.length) {
-                          return const Padding(
-                            padding: EdgeInsets.all(16),
-                            child: Center(child: CircularProgressIndicator()),
-                          );
-                        }
+                    child: events.isEmpty
+                        ? ListView(
+                            children: const [
+                              SizedBox(height: 80),
+                              Center(child: Text('Nessun evento trovato.')),
+                            ],
+                          )
+                        : ListView.builder(
+                            itemCount: events.length,
+                            itemBuilder: (context, index) {
+                              final e = events[index];
 
-                        final e = events[index];
-                        final venue = e.venue?.name ?? '';
-                        final city = e.venue?.location?.name ?? '';
-                        final prov = e.venue?.location?.provinceCode ?? '';
-                        final bands = e.bands.map((b) => b.name).join(', ');
+                              final venueLine = [
+                                if ((e.venueName ?? '').trim().isNotEmpty)
+                                  e.venueName!.trim(),
+                                if ((e.city ?? '').trim().isNotEmpty)
+                                  '${e.city!.trim()}${(e.provinceCode ?? '').trim().isNotEmpty ? ' (${e.provinceCode!.trim()})' : ''}',
+                              ].where((s) => s.isNotEmpty).join(' — ');
 
-                        return ListTile(
-                          title: Text(e.title),
-                          subtitle: Text(
-                            [
-                              if (bands.isNotEmpty) bands,
-                              if (venue.isNotEmpty) venue,
-                              if (city.isNotEmpty || prov.isNotEmpty)
-                                '$city ${prov.isNotEmpty ? "($prov)" : ""}',
-                            ].where((s) => s.trim().isNotEmpty).join(' • '),
+                              final bandLine = e.bandNames.join(', ');
+
+                              return EventWebCard(
+                                title: e.title,
+                                dateText: _formatDateOnly(e.start),
+                                venueLine: venueLine,
+                                bandLine: bandLine,
+                                posterImageUrl: e.posterImageUrl,
+                                onTap: () {
+                                  Navigator.of(context).push(
+                                    MaterialPageRoute(
+                                      builder: (_) =>
+                                          EventDetailScreen(eventId: e.id),
+                                    ),
+                                  );
+                                },
+                              );
+                            },
                           ),
-                          onTap: () {
-                            Navigator.of(context).push(
-                              MaterialPageRoute(
-                                builder: (_) =>
-                                    EventDetailScreen(eventId: e.id),
-                              ),
-                            );
-                          },
-                        );
-                      },
-                    ),
                   ),
                 ],
               ),
       ),
     );
   }
+}
+
+String _formatDateOnly(DateTime? dt) {
+  if (dt == null) return '';
+  String two(int v) => v.toString().padLeft(2, '0');
+  return '${two(dt.day)}/${two(dt.month)}/${dt.year}';
 }

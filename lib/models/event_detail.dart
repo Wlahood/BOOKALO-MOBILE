@@ -4,7 +4,9 @@ class EventDetailResponse {
   EventDetailResponse({required this.data});
 
   factory EventDetailResponse.fromJson(Map<String, dynamic> json) {
-    return EventDetailResponse(data: EventDetail.fromJson(json['data']));
+    return EventDetailResponse(
+      data: EventDetail.fromJson((json['data'] as Map).cast<String, dynamic>()),
+    );
   }
 }
 
@@ -17,6 +19,9 @@ class EventDetail {
   final VenueDetail? venue;
   final List<BandMini> bands;
   final String webUrl;
+  final String? posterImageUrl;
+  final String? facebookUrl;
+  final String? instagramUrl;
 
   EventDetail({
     required this.id,
@@ -27,24 +32,32 @@ class EventDetail {
     required this.venue,
     required this.bands,
     required this.webUrl,
+    required this.posterImageUrl,
+    required this.facebookUrl,
+    required this.instagramUrl,
   });
 
   factory EventDetail.fromJson(Map<String, dynamic> json) {
     return EventDetail(
-      id: json['id'],
-      title: json['title'],
-      description: json['description'],
+      id: json['id'] as int,
+      title: (json['title'] ?? '').toString(),
+      description: json['description']?.toString(),
       start: json['start_datetime'] != null
-          ? DateTime.parse(json['start_datetime'])
+          ? DateTime.tryParse(json['start_datetime'].toString())
           : null,
       end: json['end_datetime'] != null
-          ? DateTime.parse(json['end_datetime'])
+          ? DateTime.tryParse(json['end_datetime'].toString())
           : null,
-      venue: json['venue'] != null ? VenueDetail.fromJson(json['venue']) : null,
-      bands: (json['bands'] as List? ?? [])
-          .map((e) => BandMini.fromJson(e))
+      venue: json['venue'] != null
+          ? VenueDetail.fromJson((json['venue'] as Map).cast<String, dynamic>())
+          : null,
+      bands: (json['bands'] as List? ?? const [])
+          .map((e) => BandMini.fromJson((e as Map).cast<String, dynamic>()))
           .toList(),
-      webUrl: json['links']?['web_url'] ?? '',
+      webUrl: json['links']?['web_url']?.toString() ?? '',
+      posterImageUrl: json['poster_image_url']?.toString(),
+      facebookUrl: json['facebook_url']?.toString(),
+      instagramUrl: json['instagram_url']?.toString(),
     );
   }
 }
@@ -58,10 +71,12 @@ class VenueDetail {
 
   factory VenueDetail.fromJson(Map<String, dynamic> json) {
     return VenueDetail(
-      id: json['id'],
-      name: json['name'],
+      id: json['id'] as int,
+      name: (json['name'] ?? '').toString(),
       location: json['location'] != null
-          ? LocationDetail.fromJson(json['location'])
+          ? LocationDetail.fromJson(
+              (json['location'] as Map).cast<String, dynamic>(),
+            )
           : null,
     );
   }
@@ -90,9 +105,9 @@ class LocationDetail {
     }
 
     return LocationDetail(
-      name: json['name'],
-      region: json['region'],
-      provinceCode: json['province_code'],
+      name: json['name']?.toString(),
+      region: json['region']?.toString(),
+      provinceCode: json['province_code']?.toString(),
       lat: parse(json['lat']),
       lng: parse(json['lng']),
     );
@@ -106,6 +121,9 @@ class BandMini {
   BandMini({required this.id, required this.name});
 
   factory BandMini.fromJson(Map<String, dynamic> json) {
-    return BandMini(id: json['id'], name: json['name']);
+    return BandMini(
+      id: json['id'] as int,
+      name: (json['name'] ?? '').toString(),
+    );
   }
 }

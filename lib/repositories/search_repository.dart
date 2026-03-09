@@ -2,12 +2,34 @@ import '../models/search_response.dart';
 import '../services/api_client.dart';
 
 class SearchRepository {
-  final ApiClient api;
+  final ApiClient apiClient;
 
-  SearchRepository(this.api);
+  SearchRepository(this.apiClient);
 
-  Future<SearchData> search(String q) async {
-    final json = await api.getJson('/search', query: {'q': q});
-    return SearchResponse.fromJson(json).data;
+  Future<SearchResponse> search({
+    required String q,
+    String? region,
+    String? provinceCode,
+    String? startDate,
+    String? endDate,
+    int limit = 10,
+  }) async {
+    final query = <String, String>{'q': q, 'limit': limit.toString()};
+
+    if (region != null && region.isNotEmpty) {
+      query['region'] = region;
+    }
+    if (provinceCode != null && provinceCode.isNotEmpty) {
+      query['province_code'] = provinceCode;
+    }
+    if (startDate != null && startDate.isNotEmpty) {
+      query['start_date'] = startDate;
+    }
+    if (endDate != null && endDate.isNotEmpty) {
+      query['end_date'] = endDate;
+    }
+
+    final json = await apiClient.getJson('/search', query: query);
+    return SearchResponse.fromJson(json);
   }
 }
