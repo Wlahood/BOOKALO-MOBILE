@@ -3,6 +3,8 @@ import 'package:flutter/material.dart';
 import '../repositories/me_repository.dart';
 import '../services/api_client.dart';
 import '../models/my_entity.dart';
+import 'band_detail_screen.dart';
+import 'venue_detail_screen.dart';
 
 class MyEntitiesScreen extends StatefulWidget {
   const MyEntitiesScreen({super.key});
@@ -114,10 +116,13 @@ class _Section extends StatelessWidget {
                   subtitle: Text('Ruolo: ${_roleLabel(e.role)}'),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
-                    // Placeholder per dettaglio futuro (gestione / azioni in base al ruolo)
-                    ScaffoldMessenger.of(
-                      context,
-                    ).showSnackBar(SnackBar(content: Text('Apri: ${e.name}')));
+                    Navigator.of(context).push(
+                      MaterialPageRoute(
+                        builder: (_) => e.type == 'venue'
+                            ? VenueDetailScreen(venueId: e.id)
+                            : BandDetailScreen(bandId: e.id),
+                      ),
+                    );
                   },
                 ),
               ),

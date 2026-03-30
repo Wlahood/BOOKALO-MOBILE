@@ -8,6 +8,7 @@ import '../services/api_client.dart';
 import '../models/events_page.dart';
 import '../repositories/events_repository.dart';
 import 'event_detail_screen.dart';
+import 'package:flutter_svg/flutter_svg.dart';
 
 class BandDetailScreen extends StatefulWidget {
   const BandDetailScreen({super.key, required this.bandId});
@@ -158,6 +159,32 @@ class _BandBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = locationLine(band.location);
 
+    final imageUrl = (band.imageUrl ?? '').trim();
+    final hasImage = imageUrl.isNotEmpty;
+    final isSvg = imageUrl.toLowerCase().endsWith('.svg');
+
+    Widget avatar;
+
+    if (!hasImage) {
+      avatar = const Icon(Icons.group);
+    } else if (isSvg) {
+      avatar = SvgPicture.network(
+        imageUrl,
+        width: 56,
+        height: 56,
+        fit: BoxFit.cover,
+        placeholderBuilder: (_) =>
+            const Center(child: CircularProgressIndicator()),
+      );
+    } else {
+      avatar = Image.network(
+        imageUrl,
+        width: 56,
+        height: 56,
+        fit: BoxFit.cover,
+      );
+    }
+
     final links = <MapEntry<String, String>>[];
     void addLink(String label, String? url) {
       final u = (url ?? '').trim();
@@ -178,15 +205,7 @@ class _BandBody extends StatelessWidget {
       children: [
         Row(
           children: [
-            CircleAvatar(
-              radius: 28,
-              backgroundImage: (band.imageUrl ?? '').isNotEmpty
-                  ? NetworkImage(band.imageUrl!)
-                  : null,
-              child: (band.imageUrl ?? '').isEmpty
-                  ? const Icon(Icons.group)
-                  : null,
-            ),
+            ClipOval(child: SizedBox(width: 56, height: 56, child: avatar)),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -220,6 +239,50 @@ class _BandBody extends StatelessWidget {
         ),
 
         const SizedBox(height: 16),
+
+        if (band.permissions.canEdit || band.permissions.canManageMembers) ...[
+          Text('Gestione', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (band.permissions.canEdit)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.edit_outlined),
+                      title: const Text('Modifica band'),
+                      subtitle: const Text('Profilo, contatti e link'),
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Edit band: da implementare'),
+                          ),
+                        );
+                      },
+                    ),
+                  if (band.permissions.canManageMembers)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.groups_outlined),
+                      title: const Text('Gestisci membri'),
+                      subtitle: const Text('Inviti, ruoli e rimozioni'),
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Members band: da implementare'),
+                          ),
+                        );
+                      },
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
 
         if (band.genres.isNotEmpty) ...[
           Text('Generi', style: Theme.of(context).textTheme.titleMedium),

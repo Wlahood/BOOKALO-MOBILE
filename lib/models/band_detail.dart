@@ -24,6 +24,7 @@ class BandDetail {
 
   final Map<String, String?> socials;
   final String? bio;
+  final BandPermissions permissions;
 
   BandDetail({
     required this.id,
@@ -36,6 +37,7 @@ class BandDetail {
     required this.website,
     required this.socials,
     required this.bio,
+    required this.permissions,
   });
 
   factory BandDetail.fromJson(Map<String, dynamic> json) {
@@ -46,6 +48,8 @@ class BandDetail {
     final contacts = (json['contacts'] as Map?)?.cast<String, dynamic>() ?? {};
     final socials = (json['socials'] as Map?)?.cast<String, dynamic>() ?? {};
     final about = (json['about'] as Map?)?.cast<String, dynamic>() ?? {};
+    final permissions =
+        (json['permissions'] as Map?)?.cast<String, dynamic>() ?? {};
 
     return BandDetail(
       id: json['id'] as int,
@@ -60,6 +64,7 @@ class BandDetail {
       website: contacts['website'] as String?,
       socials: socials.map((k, v) => MapEntry(k, v as String?)),
       bio: about['bio'] as String?,
+      permissions: BandPermissions.fromJson(permissions),
     );
   }
 }
@@ -95,5 +100,19 @@ class GenreMini {
 
   factory GenreMini.fromJson(Map<String, dynamic> json) {
     return GenreMini(id: json['id'] as int, name: json['name'] as String);
+  }
+}
+
+class BandPermissions {
+  final bool canEdit;
+  final bool canManageMembers;
+
+  BandPermissions({required this.canEdit, required this.canManageMembers});
+
+  factory BandPermissions.fromJson(Map<String, dynamic> json) {
+    return BandPermissions(
+      canEdit: (json['can_edit'] as bool?) ?? false,
+      canManageMembers: (json['can_manage_members'] as bool?) ?? false,
+    );
   }
 }

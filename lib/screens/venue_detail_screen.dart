@@ -219,6 +219,66 @@ class _VenueBody extends StatelessWidget {
 
         const SizedBox(height: 16),
 
+        if (venue.permissions.canEdit ||
+            venue.permissions.canManageMembers ||
+            venue.permissions.canCreateEvent) ...[
+          Text('Gestione', style: Theme.of(context).textTheme.titleMedium),
+          const SizedBox(height: 8),
+          Card(
+            child: Padding(
+              padding: const EdgeInsets.all(12),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  if (venue.permissions.canEdit)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.edit_outlined),
+                      title: const Text('Modifica locale'),
+                      subtitle: const Text('Profilo, indirizzo e contatti'),
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Edit venue: da implementare'),
+                          ),
+                        );
+                      },
+                    ),
+                  if (venue.permissions.canManageMembers)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.groups_outlined),
+                      title: const Text('Gestisci membri'),
+                      subtitle: const Text('Inviti, ruoli e rimozioni'),
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Members venue: da implementare'),
+                          ),
+                        );
+                      },
+                    ),
+                  if (venue.permissions.canCreateEvent)
+                    ListTile(
+                      contentPadding: EdgeInsets.zero,
+                      leading: const Icon(Icons.event_available_outlined),
+                      title: const Text('Crea evento'),
+                      subtitle: const Text('Pubblica un evento dal locale'),
+                      onTap: () {
+                        ScaffoldMessenger.of(context).showSnackBar(
+                          const SnackBar(
+                            content: Text('Create event: da implementare'),
+                          ),
+                        );
+                      },
+                    ),
+                ],
+              ),
+            ),
+          ),
+          const SizedBox(height: 16),
+        ],
+
         if (address.trim().isNotEmpty) ...[
           Text('Indirizzo', style: Theme.of(context).textTheme.titleMedium),
           const SizedBox(height: 8),

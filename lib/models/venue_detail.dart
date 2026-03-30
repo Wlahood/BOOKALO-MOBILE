@@ -25,6 +25,7 @@ class VenueDetail {
 
   final Map<String, String?> socials;
   final String? bio;
+  final VenuePermissions permissions;
 
   VenueDetail({
     required this.id,
@@ -37,6 +38,7 @@ class VenueDetail {
     required this.website,
     required this.socials,
     required this.bio,
+    required this.permissions,
   });
 
   factory VenueDetail.fromJson(Map<String, dynamic> json) {
@@ -48,6 +50,8 @@ class VenueDetail {
     final contacts = (json['contacts'] as Map?)?.cast<String, dynamic>() ?? {};
     final socials = (json['socials'] as Map?)?.cast<String, dynamic>() ?? {};
     final about = (json['about'] as Map?)?.cast<String, dynamic>() ?? {};
+    final permissions =
+        (json['permissions'] as Map?)?.cast<String, dynamic>() ?? {};
 
     return VenueDetail(
       id: json['id'] as int,
@@ -60,6 +64,7 @@ class VenueDetail {
       website: contacts['website'] as String?,
       socials: socials.map((k, v) => MapEntry(k, v as String?)),
       bio: about['bio'] as String?,
+      permissions: VenuePermissions.fromJson(permissions),
     );
   }
 }
@@ -121,5 +126,25 @@ class VenueAddress {
       if ((freeText ?? '').trim().isNotEmpty) freeText!.trim(),
     ];
     return parts.join(' ');
+  }
+}
+
+class VenuePermissions {
+  final bool canEdit;
+  final bool canManageMembers;
+  final bool canCreateEvent;
+
+  VenuePermissions({
+    required this.canEdit,
+    required this.canManageMembers,
+    required this.canCreateEvent,
+  });
+
+  factory VenuePermissions.fromJson(Map<String, dynamic> json) {
+    return VenuePermissions(
+      canEdit: (json['can_edit'] as bool?) ?? false,
+      canManageMembers: (json['can_manage_members'] as bool?) ?? false,
+      canCreateEvent: (json['can_create_event'] as bool?) ?? false,
+    );
   }
 }
