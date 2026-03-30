@@ -9,6 +9,7 @@ import '../models/events_page.dart';
 import '../repositories/events_repository.dart';
 import 'event_detail_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'band_edit_screen.dart';
 
 class BandDetailScreen extends StatefulWidget {
   const BandDetailScreen({super.key, required this.bandId});
@@ -130,6 +131,7 @@ class _BandDetailScreenState extends State<BandDetailScreen> {
               eventsLoading: eventsLoading,
               eventsError: eventsError,
               upcoming: upcoming,
+              onRefresh: _load,
             ),
     );
   }
@@ -144,6 +146,7 @@ class _BandBody extends StatelessWidget {
     required this.eventsLoading,
     required this.eventsError,
     required this.upcoming,
+    required this.onRefresh,
   });
 
   final BandDetail band;
@@ -154,6 +157,7 @@ class _BandBody extends StatelessWidget {
   final bool eventsLoading;
   final String? eventsError;
   final List<EventListItem> upcoming;
+  final Future<void> Function() onRefresh;
 
   @override
   Widget build(BuildContext context) {
@@ -255,12 +259,16 @@ class _BandBody extends StatelessWidget {
                       leading: const Icon(Icons.edit_outlined),
                       title: const Text('Modifica band'),
                       subtitle: const Text('Profilo, contatti e link'),
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Edit band: da implementare'),
+                      onTap: () async {
+                        final updated = await Navigator.of(context).push<bool>(
+                          MaterialPageRoute(
+                            builder: (_) => BandEditScreen(bandId: band.id),
                           ),
                         );
+
+                        if (updated == true) {
+                          await onRefresh();
+                        }
                       },
                     ),
                   if (band.permissions.canManageMembers)

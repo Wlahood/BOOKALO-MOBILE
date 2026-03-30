@@ -8,6 +8,8 @@ import '../services/api_client.dart';
 import '../models/events_page.dart';
 import '../repositories/events_repository.dart';
 import 'event_detail_screen.dart';
+import 'package:flutter_svg/flutter_svg.dart';
+import 'venue_edit_screen.dart';
 
 class VenueDetailScreen extends StatefulWidget {
   const VenueDetailScreen({super.key, required this.venueId});
@@ -123,6 +125,7 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
               eventsLoading: eventsLoading,
               eventsError: eventsError,
               upcoming: upcoming,
+              onRefresh: _load,
             ),
     );
   }
@@ -143,12 +146,14 @@ class _VenueBody extends StatelessWidget {
     required this.eventsLoading,
     required this.eventsError,
     required this.upcoming,
+    required this.onRefresh,
   });
 
   final VenueDetail venue;
   final String Function(LocationMini?) locationLine;
   final Future<void> Function(String) openExternal;
   final Future<void> Function(String) openMail;
+  final Future<void> Function() onRefresh;
 
   final bool eventsLoading;
   final String? eventsError;
@@ -158,6 +163,33 @@ class _VenueBody extends StatelessWidget {
   Widget build(BuildContext context) {
     final loc = locationLine(venue.location);
     final address = venue.address.toOneLine();
+
+    final imageUrl = (venue.imageUrl ?? '').trim();
+    final hasImage = imageUrl.isNotEmpty;
+    final isSvg = imageUrl.toLowerCase().endsWith('.svg');
+
+    Widget avatar;
+
+    if (!hasImage) {
+      avatar = const Icon(Icons.location_city);
+    } else if (isSvg) {
+      avatar = SvgPicture.network(
+        imageUrl,
+        width: 56,
+        height: 56,
+        fit: BoxFit.cover,
+        placeholderBuilder: (_) =>
+            const Center(child: CircularProgressIndicator()),
+      );
+    } else {
+      avatar = Image.network(
+        imageUrl,
+        width: 56,
+        height: 56,
+        fit: BoxFit.cover,
+        errorBuilder: (_, __, ___) => const Icon(Icons.location_city),
+      );
+    }
 
     final links = <MapEntry<String, String>>[];
     void addLink(String label, String? url) {
@@ -176,15 +208,7 @@ class _VenueBody extends StatelessWidget {
       children: [
         Row(
           children: [
-            CircleAvatar(
-              radius: 28,
-              backgroundImage: (venue.imageUrl ?? '').isNotEmpty
-                  ? NetworkImage(venue.imageUrl!)
-                  : null,
-              child: (venue.imageUrl ?? '').isEmpty
-                  ? const Icon(Icons.location_city)
-                  : null,
-            ),
+            ClipOval(child: SizedBox(width: 56, height: 56, child: avatar)),
             const SizedBox(width: 12),
             Expanded(
               child: Column(
@@ -236,12 +260,16 @@ class _VenueBody extends StatelessWidget {
                       leading: const Icon(Icons.edit_outlined),
                       title: const Text('Modifica locale'),
                       subtitle: const Text('Profilo, indirizzo e contatti'),
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Edit venue: da implementare'),
+                      onTap: () async {
+                        final updated = await Navigator.of(context).push<bool>(
+                          MaterialPageRoute(
+                            builder: (_) => VenueEditScreen(venueId: venue.id),
                           ),
                         );
+
+                        if (updated == true) {
+                          await onRefresh();
+                        }
                       },
                     ),
                   if (venue.permissions.canManageMembers)
