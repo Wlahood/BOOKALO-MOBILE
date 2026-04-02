@@ -10,6 +10,7 @@ import '../repositories/events_repository.dart';
 import 'event_detail_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'band_edit_screen.dart';
+import 'band_members_screen.dart';
 
 class BandDetailScreen extends StatefulWidget {
   const BandDetailScreen({super.key, required this.bandId});
@@ -277,12 +278,14 @@ class _BandBody extends StatelessWidget {
                       leading: const Icon(Icons.groups_outlined),
                       title: const Text('Gestisci membri'),
                       subtitle: const Text('Inviti, ruoli e rimozioni'),
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Members band: da implementare'),
+                      onTap: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => BandMembersScreen(bandId: band.id),
                           ),
                         );
+
+                        await onRefresh();
                       },
                     ),
                 ],

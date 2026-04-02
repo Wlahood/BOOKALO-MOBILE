@@ -1,6 +1,7 @@
 import '../models/band_detail.dart';
 import '../models/location_option.dart';
 import '../services/api_client.dart';
+import '../models/band_members.dart';
 
 class BandsRepository {
   final ApiClient api;
@@ -40,5 +41,40 @@ class BandsRepository {
   Future<BandDetail> updateBand(int id, Map<String, dynamic> body) async {
     final json = await api.putJson('/me/bands/$id', body: body);
     return BandDetailResponse.fromJson(json).data;
+  }
+
+  Future<BandMembersData> fetchBandMembers(int bandId) async {
+    final json = await api.getJson('/me/bands/$bandId/members');
+    return BandMembersResponse.fromJson(json).data;
+  }
+
+  Future<void> inviteBandMember(
+    int bandId, {
+    required String email,
+    required String role,
+  }) async {
+    await api.postJson(
+      '/me/bands/$bandId/invites',
+      body: {'email': email, 'role': role},
+    );
+  }
+
+  Future<void> updateBandMemberRole(
+    int bandId, {
+    required int userId,
+    required String role,
+  }) async {
+    await api.patchJson(
+      '/me/bands/$bandId/members/$userId',
+      body: {'role': role},
+    );
+  }
+
+  Future<void> removeBandMember(int bandId, {required int userId}) async {
+    await api.deleteJson('/me/bands/$bandId/members/$userId');
+  }
+
+  Future<void> revokeInvite(int inviteId) async {
+    await api.deleteJson('/me/invites/$inviteId');
   }
 }
