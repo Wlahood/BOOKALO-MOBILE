@@ -183,15 +183,14 @@ class _VenueEditScreenState extends State<VenueEditScreen> {
 
       if (!mounted) return;
       Navigator.of(context).pop(true);
-    } catch (e) {
+    } catch (e, stack) {
+      debugPrint('❌ ERRORE SALVATAGGIO VENUE: $e');
+      debugPrint('📌 STACK VENUE: $stack');
+
       if (!mounted) return;
       ScaffoldMessenger.of(
         context,
       ).showSnackBar(SnackBar(content: Text('Salvataggio fallito: $e')));
-    } finally {
-      if (mounted) {
-        setState(() => saving = false);
-      }
     }
   }
 
