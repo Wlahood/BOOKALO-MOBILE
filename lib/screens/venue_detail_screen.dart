@@ -10,6 +10,7 @@ import '../repositories/events_repository.dart';
 import 'event_detail_screen.dart';
 import 'package:flutter_svg/flutter_svg.dart';
 import 'venue_edit_screen.dart';
+import 'venue_members_screen.dart';
 
 class VenueDetailScreen extends StatefulWidget {
   const VenueDetailScreen({super.key, required this.venueId});
@@ -278,12 +279,15 @@ class _VenueBody extends StatelessWidget {
                       leading: const Icon(Icons.groups_outlined),
                       title: const Text('Gestisci membri'),
                       subtitle: const Text('Inviti, ruoli e rimozioni'),
-                      onTap: () {
-                        ScaffoldMessenger.of(context).showSnackBar(
-                          const SnackBar(
-                            content: Text('Members venue: da implementare'),
+                      onTap: () async {
+                        await Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) =>
+                                VenueMembersScreen(venueId: venue.id),
                           ),
                         );
+
+                        await onRefresh();
                       },
                     ),
                   if (venue.permissions.canCreateEvent)
