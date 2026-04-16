@@ -286,8 +286,9 @@ class _VenueMembersScreenState extends State<VenueMembersScreen> {
                                   )
                                   .toList(),
                               onChanged: (value) {
-                                if (value == null || value == member.role)
+                                if (value == null || value == member.role) {
                                   return;
+                                }
                                 _changeRole(member, value);
                               },
                             ),

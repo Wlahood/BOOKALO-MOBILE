@@ -45,7 +45,7 @@ class AppAvatar extends StatelessWidget {
         width: size,
         height: size,
         fit: BoxFit.cover,
-        errorBuilder: (_, __, ___) {
+        errorBuilder: (context, error, stackTrace) {
           return Icon(fallbackIcon, size: size * 0.5);
         },
         loadingBuilder: (context, widget, progress) {

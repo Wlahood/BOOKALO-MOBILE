@@ -11,15 +11,16 @@ class ApiClient {
   final http.Client _client;
   final TokenStore _tokenStore;
 
-  static const String baseUrl = apiBaseUrl; // es: http://10.0.2.2:8090/api/v1
+  static const String baseUrl = apiBaseUrl;
 
   Uri _uri(String path, [Map<String, String>? query]) {
     final base = Uri.parse(baseUrl);
+
     return base.replace(
       path: base.path.endsWith('/')
           ? '${base.path}${path.startsWith('/') ? path.substring(1) : path}'
           : '${base.path}${path.startsWith('/') ? path : '/$path'}',
-      queryParameters: query?.isEmpty == true ? null : query,
+      queryParameters: query == null || query.isEmpty ? null : query,
     );
   }
 
@@ -37,15 +38,34 @@ class ApiClient {
     return headers;
   }
 
+  Map<String, dynamic> _decodeJsonResponse(http.Response res) {
+    if (res.body.isEmpty) {
+      return <String, dynamic>{};
+    }
+
+    final decoded = jsonDecode(res.body);
+
+    if (decoded is Map<String, dynamic>) {
+      return decoded;
+    }
+
+    return <String, dynamic>{'data': decoded};
+  }
+
+  void _ensureSuccess(http.Response res) {
+    if (res.statusCode < 200 || res.statusCode >= 300) {
+      throw Exception('HTTP ${res.statusCode}: ${res.body}');
+    }
+  }
+
   Future<Map<String, dynamic>> getJson(
     String path, {
     Map<String, String>? query,
   }) async {
     final res = await _client.get(_uri(path, query), headers: await _headers());
-    if (res.statusCode < 200 || res.statusCode >= 300) {
-      throw Exception('HTTP ${res.statusCode}: ${res.body}');
-    }
-    return jsonDecode(res.body) as Map<String, dynamic>;
+
+    _ensureSuccess(res);
+    return _decodeJsonResponse(res);
   }
 
   Future<Map<String, dynamic>> postJson(
@@ -58,10 +78,9 @@ class ApiClient {
       headers: await _headers(extra: {'Content-Type': 'application/json'}),
       body: jsonEncode(body ?? <String, dynamic>{}),
     );
-    if (res.statusCode < 200 || res.statusCode >= 300) {
-      throw Exception('HTTP ${res.statusCode}: ${res.body}');
-    }
-    return jsonDecode(res.body) as Map<String, dynamic>;
+
+    _ensureSuccess(res);
+    return _decodeJsonResponse(res);
   }
 
   Future<Map<String, dynamic>> putJson(
@@ -74,10 +93,9 @@ class ApiClient {
       headers: await _headers(extra: {'Content-Type': 'application/json'}),
       body: jsonEncode(body ?? <String, dynamic>{}),
     );
-    if (res.statusCode < 200 || res.statusCode >= 300) {
-      throw Exception('HTTP ${res.statusCode}: ${res.body}');
-    }
-    return jsonDecode(res.body) as Map<String, dynamic>;
+
+    _ensureSuccess(res);
+    return _decodeJsonResponse(res);
   }
 
   Future<Map<String, dynamic>> patchJson(
@@ -91,13 +109,8 @@ class ApiClient {
       body: jsonEncode(body ?? <String, dynamic>{}),
     );
 
-    if (res.statusCode < 200 || res.statusCode >= 300) {
-      throw Exception('HTTP ${res.statusCode}: ${res.body}');
-    }
-
-    return res.body.isEmpty
-        ? <String, dynamic>{}
-        : jsonDecode(res.body) as Map<String, dynamic>;
+    _ensureSuccess(res);
+    return _decodeJsonResponse(res);
   }
 
   Future<Map<String, dynamic>> deleteJson(
@@ -105,23 +118,13 @@ class ApiClient {
     Map<String, String>? query,
     Map<String, dynamic>? body,
   }) async {
-    final req = http.Request('DELETE', _uri(path, query));
-    req.headers.addAll(
-      await _headers(extra: {'Content-Type': 'application/json'}),
+    final res = await _client.delete(
+      _uri(path, query),
+      headers: await _headers(extra: {'Content-Type': 'application/json'}),
+      body: body == null ? null : jsonEncode(body),
     );
-    if (body != null) {
-      req.body = jsonEncode(body);
-    }
 
-    final streamed = await _client.send(req);
-    final res = await http.Response.fromStream(streamed);
-
-    if (res.statusCode < 200 || res.statusCode >= 300) {
-      throw Exception('HTTP ${res.statusCode}: ${res.body}');
-    }
-
-    return res.body.isEmpty
-        ? <String, dynamic>{}
-        : jsonDecode(res.body) as Map<String, dynamic>;
+    _ensureSuccess(res);
+    return _decodeJsonResponse(res);
   }
 }

@@ -104,15 +104,20 @@ class _LoginScreenState extends State<LoginScreen> {
               onPressed: _loading
                   ? null
                   : () async {
-                      final ok = await Navigator.of(context).push<bool>(
+                      final navigator = Navigator.of(context);
+
+                      final ok = await navigator.push<bool>(
                         MaterialPageRoute(
                           builder: (_) => const RegisterScreen(),
                         ),
                       );
 
-                      // Se registrazione OK, RegisterScreen fa pop(true) e l’utente è già loggato.
-                      if (ok == true && mounted) {
-                        Navigator.of(context).pop(true);
+                      if (!mounted) {
+                        return;
+                      }
+
+                      if (ok == true) {
+                        navigator.pop(true);
                       }
                     },
               child: const Text('Non hai un account? Registrati'),

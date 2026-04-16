@@ -45,7 +45,6 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       if (!mounted) return;
       setState(() => error = e.toString());
     } finally {
-      if (!mounted) return;
       setState(() => loading = false);
     }
   }

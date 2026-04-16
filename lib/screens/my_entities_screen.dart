@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import '../repositories/me_repository.dart';
 import '../services/api_client.dart';
 import '../models/my_entity.dart';
+
 import 'band_detail_screen.dart';
 import 'venue_detail_screen.dart';
 
@@ -55,7 +56,6 @@ class _MyEntitiesScreenState extends State<MyEntitiesScreen> {
                 style: Theme.of(context).textTheme.bodySmall,
               ),
               const SizedBox(height: 16),
-
               _Section(
                 title: 'Locali',
                 emptyText: 'Non gestisci ancora nessun locale.',
