@@ -4,6 +4,45 @@ param(
 
 $ErrorActionPreference = "Stop"
 
+function Remove-DirectoryWithRetry {
+    param(
+        [Parameter(Mandatory = $true)]
+        [string]$Path,
+
+        [int]$Retries = 5,
+
+        [int]$DelaySeconds = 2
+    )
+
+    for ($attempt = 1; $attempt -le $Retries; $attempt++) {
+
+        try {
+            if (Test-Path $Path) {
+                Remove-Item `
+                    -Recurse `
+                    -Force `
+                    -Path $Path `
+                    -ErrorAction Stop
+            }
+
+            return $true
+        }
+        catch {
+
+            if ($attempt -eq $Retries) {
+                Write-Warning "Impossibile rimuovere la cartella temporanea: $Path"
+                Write-Warning $_.Exception.Message
+                return $false
+            }
+
+            Write-Host "   Cleanup occupato, nuovo tentativo $attempt/$Retries..."
+            Start-Sleep -Seconds $DelaySeconds
+        }
+    }
+
+    return $false
+}
+
 function Get-Timestamp {
   return (Get-Date).ToString("yyyy-MM-dd_HH-mm-ss")
 }
@@ -100,7 +139,12 @@ try {
 }
 
 Write-Host "-> Cleaning stage..."
-Remove-Item -Recurse -Force $stageDir
+
+$cleaned = Remove-DirectoryWithRetry -Path $stageDir
+
+if (-not $cleaned) {
+    Write-Warning "Backup creato correttamente, ma la cartella temporanea non e stata rimossa."
+}
 
 Write-Host ""
 Write-Host "✅ Done: $outFile"
