@@ -1,3 +1,6 @@
+import 'workspace/workflow_form_screen.dart';
+import 'workspace/common.dart';
+import '../services/link_router.dart';
 import 'package:flutter/material.dart';
 import '../services/auth_controller.dart';
 import 'register_screen.dart';
@@ -101,26 +104,43 @@ class _LoginScreenState extends State<LoginScreen> {
             ),
             const SizedBox(height: 12),
             TextButton(
+              onPressed: () => openPage(
+                context,
+                const WorkflowFormScreen(
+                  title: 'Recupera password',
+                  path: '/auth/forgot-password',
+                  fields: [
+                    FormFieldSpec(
+                      'email',
+                      'Email',
+                      kind: InputKind.email,
+                      required: true,
+                    ),
+                  ],
+                ),
+              ),
+              child: const Text('Password dimenticata?'),
+            ),
+            TextButton(
               onPressed: _loading
                   ? null
                   : () async {
-                      final navigator = Navigator.of(context);
-
-                      final ok = await navigator.push<bool>(
+                      final ok = await Navigator.of(context).push<bool>(
                         MaterialPageRoute(
                           builder: (_) => const RegisterScreen(),
                         ),
                       );
 
-                      if (!mounted) {
-                        return;
-                      }
-
-                      if (ok == true) {
-                        navigator.pop(true);
+                      // Se registrazione OK, RegisterScreen fa pop(true) e l’utente è già loggato.
+                      if (ok == true && context.mounted) {
+                        Navigator.of(context).pop(true);
                       }
                     },
               child: const Text('Non hai un account? Registrati'),
+            ),
+            TextButton(
+              onPressed: () => openPage(context, const ResetPasswordScreen()),
+              child: const Text('Ho già il link di recupero'),
             ),
           ],
         ),

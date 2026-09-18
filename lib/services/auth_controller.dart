@@ -21,17 +21,17 @@ class AuthState {
 }
 
 class AuthController {
-  AuthController._()
-    : tokenStore = TokenStore(),
-      api = ApiClient(),
+  AuthController({TokenStore? tokenStore, ApiClient? api})
+    : tokenStore = tokenStore ?? TokenStore(),
       state = ValueNotifier<AuthState>(const AuthState.unknown()) {
-    repo = AuthRepository(api);
+    this.api = api ?? ApiClient(tokenStore: this.tokenStore);
+    repo = AuthRepository(this.api);
   }
 
-  static final AuthController instance = AuthController._();
+  static final AuthController instance = AuthController();
 
   final TokenStore tokenStore;
-  final ApiClient api;
+  late final ApiClient api;
   late final AuthRepository repo;
 
   final ValueNotifier<AuthState> state;
@@ -48,8 +48,10 @@ class AuthController {
     try {
       final user = await repo.me();
       state.value = AuthState.authenticated(user);
-    } catch (_) {
-      await tokenStore.clearToken();
+    } catch (error) {
+      if (error is ApiException && error.statusCode == 401) {
+        await tokenStore.clearToken();
+      }
       state.value = const AuthState.unauthenticated();
     }
   }
@@ -60,13 +62,18 @@ class AuthController {
     String? deviceName,
   }) async {
     state.value = const AuthState.loading();
-    final res = await repo.login(
-      email: email,
-      password: password,
-      deviceName: deviceName,
-    );
-    await tokenStore.writeToken(res.token);
-    state.value = AuthState.authenticated(res.user);
+    try {
+      final res = await repo.login(
+        email: email,
+        password: password,
+        deviceName: deviceName,
+      );
+      await tokenStore.writeToken(res.token);
+      state.value = AuthState.authenticated(res.user);
+    } catch (_) {
+      state.value = const AuthState.unauthenticated();
+      rethrow;
+    }
   }
 
   Future<void> register({
@@ -77,15 +84,20 @@ class AuthController {
     String? deviceName,
   }) async {
     state.value = const AuthState.loading();
-    final res = await repo.register(
-      name: name,
-      email: email,
-      password: password,
-      passwordConfirmation: passwordConfirmation,
-      deviceName: deviceName,
-    );
-    await tokenStore.writeToken(res.token);
-    state.value = AuthState.authenticated(res.user);
+    try {
+      final res = await repo.register(
+        name: name,
+        email: email,
+        password: password,
+        passwordConfirmation: passwordConfirmation,
+        deviceName: deviceName,
+      );
+      await tokenStore.writeToken(res.token);
+      state.value = AuthState.authenticated(res.user);
+    } catch (_) {
+      state.value = const AuthState.unauthenticated();
+      rethrow;
+    }
   }
 
   Future<void> logout() async {

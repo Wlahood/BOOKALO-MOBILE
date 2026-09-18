@@ -13,6 +13,7 @@ class VenueDetail {
   final int id;
   final String name;
   final bool verified;
+  final int? capacity;
 
   final String? imageUrl;
 
@@ -31,6 +32,7 @@ class VenueDetail {
     required this.id,
     required this.name,
     required this.verified,
+    this.capacity,
     required this.imageUrl,
     required this.location,
     required this.address,
@@ -57,6 +59,7 @@ class VenueDetail {
       id: json['id'] as int,
       name: json['name'] as String,
       verified: (json['verified'] as bool?) ?? false,
+      capacity: (json['capacity'] as num?)?.toInt(),
       imageUrl: profile?['url'] as String?,
       location: loc == null ? null : LocationMini.fromJson(loc),
       address: VenueAddress.fromJson(addressJson),

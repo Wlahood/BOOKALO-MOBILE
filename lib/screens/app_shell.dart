@@ -2,12 +2,13 @@ import 'package:flutter/material.dart';
 
 import 'home_screen.dart';
 import 'search_screen.dart';
-import 'login_screen.dart';
-import 'profile_screen.dart';
 
-import '../repositories/notifications_repository.dart';
-import '../services/api_client.dart';
+import 'login_screen.dart';
 import '../services/auth_controller.dart';
+
+import 'workspace/workspace_screen.dart';
+import 'workspace/account_screen.dart';
+import 'workspace/common.dart';
 
 class AppShell extends StatefulWidget {
   const AppShell({super.key});
@@ -18,71 +19,21 @@ class AppShell extends StatefulWidget {
 
 class _AppShellState extends State<AppShell> {
   int _index = 0;
-  final _notificationsRepo = NotificationsRepository(ApiClient());
-  int _unreadNotifications = 0;
 
   List<Widget> _pagesFor(AuthState auth) {
-    return [const HomeScreen(), const SearchScreen(), const ProfileScreen()];
+    return [
+      const HomeScreen(),
+      const SearchScreen(),
+      auth.status == AuthStatus.authenticated
+          ? const WorkspaceScreen()
+          : const GuestProfileScreen(),
+    ];
   }
 
   @override
   void initState() {
     super.initState();
     AuthController.instance.bootstrap();
-    AuthController.instance.state.addListener(_handleAuthChanged);
-    _handleAuthChanged();
-  }
-
-  @override
-  void dispose() {
-    AuthController.instance.state.removeListener(_handleAuthChanged);
-    super.dispose();
-  }
-
-  Future<void> _handleAuthChanged() async {
-    final auth = AuthController.instance.state.value;
-
-    if (auth.status != AuthStatus.authenticated) {
-      if (mounted) {
-        setState(() => _unreadNotifications = 0);
-      }
-      return;
-    }
-
-    try {
-      final count = await _notificationsRepo.fetchUnreadCount();
-      if (!mounted) {
-        return;
-      }
-      setState(() => _unreadNotifications = count);
-    } catch (_) {
-      if (!mounted) {
-        return;
-      }
-      setState(() => _unreadNotifications = 0);
-    }
-  }
-
-  Widget _buildProfileIcon() {
-    if (_unreadNotifications <= 0) {
-      return const Icon(Icons.person_outline);
-    }
-
-    return Badge(
-      label: Text(_unreadNotifications > 99 ? '99+' : '$_unreadNotifications'),
-      child: const Icon(Icons.person_outline),
-    );
-  }
-
-  Widget _buildProfileActiveIcon() {
-    if (_unreadNotifications <= 0) {
-      return const Icon(Icons.person);
-    }
-
-    return Badge(
-      label: Text(_unreadNotifications > 99 ? '99+' : '$_unreadNotifications'),
-      child: const Icon(Icons.person),
-    );
   }
 
   @override
@@ -95,11 +46,7 @@ class _AppShellState extends State<AppShell> {
         return PopScope(
           canPop: _index == 0,
           onPopInvokedWithResult: (didPop, result) {
-            if (didPop) {
-              return;
-            }
-
-            if (_index != 0) {
+            if (!didPop && _index != 0) {
               setState(() => _index = 0);
             }
           },
@@ -108,47 +55,34 @@ class _AppShellState extends State<AppShell> {
             bottomNavigationBar: BottomNavigationBar(
               currentIndex: _index,
               onTap: (i) async {
+                // Se l'utente tocca "Profilo" (tab 2) ed è guest, lo mando al login
                 if (i == 2 && auth.status != AuthStatus.authenticated) {
-                  final navigator = Navigator.of(context);
-
-                  await navigator.push(
+                  await Navigator.of(context).push(
                     MaterialPageRoute(builder: (_) => const LoginScreen()),
                   );
 
-                  await _handleAuthChanged();
-
-                  if (!mounted) {
-                    return;
-                  }
-
-                  setState(() => _index = 2);
-                  return;
-                }
-
-                if (i == 2) {
-                  await _handleAuthChanged();
-                }
-
-                if (!mounted) {
+                  // Dopo login, aggiorna lo stato (LoginScreen già fa login->state authenticated)
+                  // e resta sul tab profilo:
+                  if (mounted) setState(() => _index = 2);
                   return;
                 }
 
                 setState(() => _index = i);
               },
-              items: [
-                const BottomNavigationBarItem(
+              items: const [
+                BottomNavigationBarItem(
                   icon: Icon(Icons.home_outlined),
                   activeIcon: Icon(Icons.home),
                   label: 'Home',
                 ),
-                const BottomNavigationBarItem(
+                BottomNavigationBarItem(
                   icon: Icon(Icons.search_outlined),
                   activeIcon: Icon(Icons.search),
                   label: 'Cerca',
                 ),
                 BottomNavigationBarItem(
-                  icon: _buildProfileIcon(),
-                  activeIcon: _buildProfileActiveIcon(),
+                  icon: Icon(Icons.person_outline),
+                  activeIcon: Icon(Icons.person),
                   label: 'Profilo',
                 ),
               ],
@@ -179,6 +113,10 @@ class GuestProfileScreen extends StatelessWidget {
             const SizedBox(height: 8),
             const Text('Accedi per sbloccare le funzioni riservate.'),
             const SizedBox(height: 16),
+            TextButton(
+              onPressed: () => openPage(context, const HelpScreen()),
+              child: const Text('Guide Bookalo'),
+            ),
             FilledButton(
               onPressed: () {
                 Navigator.of(

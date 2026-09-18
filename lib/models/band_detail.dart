@@ -12,6 +12,8 @@ class BandDetailResponse {
 class BandDetail {
   final int id;
   final String name;
+  final List<Map<String, dynamic>> tracks;
+  final bool claimed;
   final bool verified;
 
   final String? imageUrl;
@@ -30,6 +32,8 @@ class BandDetail {
     required this.id,
     required this.name,
     required this.verified,
+    this.claimed = false,
+    this.tracks = const [],
     required this.imageUrl,
     required this.location,
     required this.genres,
@@ -55,6 +59,10 @@ class BandDetail {
       id: json['id'] as int,
       name: json['name'] as String,
       verified: (json['verified'] as bool?) ?? false,
+      claimed: json['claimed'] == true,
+      tracks: (json['tracks'] as List? ?? [])
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList(),
       imageUrl: profile?['url'] as String?,
       location: loc == null ? null : LocationMini.fromJson(loc),
       genres: genresJson

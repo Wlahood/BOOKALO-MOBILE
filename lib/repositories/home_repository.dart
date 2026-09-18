@@ -14,6 +14,7 @@ class HomeRepository {
     int? bandId,
     int? venueId,
     int perPage = 20,
+    int page = 1,
   }) async {
     final query = <String, String>{};
 
@@ -37,6 +38,7 @@ class HomeRepository {
     }
 
     query['per_page'] = perPage.toString();
+    query['page'] = page.toString();
 
     final json = await apiClient.getJson('/home', query: query);
     return HomeResponse.fromJson(json);

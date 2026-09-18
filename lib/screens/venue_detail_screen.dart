@@ -1,3 +1,9 @@
+import 'workspace/workspace_screen.dart';
+import 'workspace/workflow_form_screen.dart';
+import 'workspace/form_specs.dart';
+import 'workspace/common.dart';
+import '../services/auth_controller.dart';
+import 'login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -48,12 +54,12 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
 
     try {
       final v = await repo.fetchVenue(widget.venueId);
-      setState(() => venue = v);
+      if (mounted) setState(() => venue = v);
       await _loadUpcomingEvents(v.id);
     } catch (e) {
-      setState(() => error = e.toString());
+      if (mounted) setState(() => error = e.toString());
     } finally {
-      setState(() => loading = false);
+      if (mounted) setState(() => loading = false);
     }
   }
 
@@ -76,20 +82,18 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
 
     final now = DateTime.now();
     final startDate = _yyyyMmDd(now);
-    final endDate = _yyyyMmDd(now.add(const Duration(days: 30)));
 
     try {
       final list = await eventsRepo.fetchVenueUpcomingEvents(
         venueId: venueId,
         startDate: startDate,
-        endDate: endDate,
         perPage: 20,
       );
-      setState(() => upcoming = list);
+      if (mounted) setState(() => upcoming = list);
     } catch (e) {
-      setState(() => eventsError = e.toString());
+      if (mounted) setState(() => eventsError = e.toString());
     } finally {
-      setState(() => eventsLoading = false);
+      if (mounted) setState(() => eventsLoading = false);
     }
   }
 
@@ -106,7 +110,57 @@ class _VenueDetailScreenState extends State<VenueDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Locale')),
+      appBar: AppBar(
+        title: const Text('Locale'),
+        actions: [
+          IconButton(
+            tooltip: 'Azioni',
+            icon: const Icon(Icons.more_vert),
+            onPressed: () async {
+              if (AuthController.instance.state.value.status !=
+                  AuthStatus.authenticated) {
+                await openPage(context, const LoginScreen());
+                if (!context.mounted) return;
+              }
+              if (AuthController.instance.state.value.status !=
+                  AuthStatus.authenticated) {
+                return;
+              }
+              await showModalBottomSheet<void>(
+                context: context,
+                builder: (sheet) => SafeArea(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ListTile(
+                        title: const Text('Rivendica questo profilo'),
+                        onTap: () {
+                          Navigator.pop(sheet);
+                          openPage(
+                            context,
+                            WorkflowFormScreen(
+                              title: 'Rivendica profilo',
+                              path: '/workspace/venues/${widget.venueId}/claim',
+                              fields: claimFields,
+                            ),
+                          );
+                        },
+                      ),
+                      ListTile(
+                        title: const Text('Apri la mia dashboard'),
+                        onTap: () {
+                          Navigator.pop(sheet);
+                          openPage(context, const DashboardScreen());
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : error != null
@@ -188,8 +242,7 @@ class _VenueBody extends StatelessWidget {
         width: 56,
         height: 56,
         fit: BoxFit.cover,
-        errorBuilder: (context, error, stackTrace) =>
-            const Icon(Icons.location_city),
+        errorBuilder: (_, _, _) => const Icon(Icons.location_city),
       );
     }
 
@@ -245,6 +298,7 @@ class _VenueBody extends StatelessWidget {
 
         const SizedBox(height: 16),
 
+        if (venue.capacity != null) Text('Capienza: ${venue.capacity}'),
         if (venue.permissions.canEdit ||
             venue.permissions.canManageMembers ||
             venue.permissions.canCreateEvent) ...[

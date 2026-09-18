@@ -1,3 +1,9 @@
+import 'workspace/workspace_screen.dart';
+import 'workspace/workflow_form_screen.dart';
+import 'workspace/form_specs.dart';
+import 'workspace/common.dart';
+import '../services/auth_controller.dart';
+import 'login_screen.dart';
 import 'package:flutter/material.dart';
 import 'package:url_launcher/url_launcher.dart';
 
@@ -54,12 +60,12 @@ class _BandDetailScreenState extends State<BandDetailScreen> {
 
     try {
       final b = await repo.fetchBand(widget.bandId);
-      setState(() => band = b);
+      if (mounted) setState(() => band = b);
       await _loadUpcomingEvents(b.id);
     } catch (e) {
-      setState(() => error = e.toString());
+      if (mounted) setState(() => error = e.toString());
     } finally {
-      setState(() => loading = false);
+      if (mounted) setState(() => loading = false);
     }
   }
 
@@ -82,20 +88,18 @@ class _BandDetailScreenState extends State<BandDetailScreen> {
 
     final now = DateTime.now();
     final startDate = _yyyyMmDd(now);
-    final endDate = _yyyyMmDd(now.add(const Duration(days: 30)));
 
     try {
       final list = await eventsRepo.fetchBandUpcomingEvents(
         bandId: bandId,
         startDate: startDate,
-        endDate: endDate,
         perPage: 20,
       );
-      setState(() => upcoming = list);
+      if (mounted) setState(() => upcoming = list);
     } catch (e) {
-      setState(() => eventsError = e.toString());
+      if (mounted) setState(() => eventsError = e.toString());
     } finally {
-      setState(() => eventsLoading = false);
+      if (mounted) setState(() => eventsLoading = false);
     }
   }
 
@@ -112,7 +116,57 @@ class _BandDetailScreenState extends State<BandDetailScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: const Text('Band')),
+      appBar: AppBar(
+        title: const Text('Band'),
+        actions: [
+          IconButton(
+            tooltip: 'Azioni',
+            icon: const Icon(Icons.more_vert),
+            onPressed: () async {
+              if (AuthController.instance.state.value.status !=
+                  AuthStatus.authenticated) {
+                await openPage(context, const LoginScreen());
+                if (!context.mounted) return;
+              }
+              if (AuthController.instance.state.value.status !=
+                  AuthStatus.authenticated) {
+                return;
+              }
+              await showModalBottomSheet<void>(
+                context: context,
+                builder: (sheet) => SafeArea(
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      ListTile(
+                        title: const Text('Rivendica questo profilo'),
+                        onTap: () {
+                          Navigator.pop(sheet);
+                          openPage(
+                            context,
+                            WorkflowFormScreen(
+                              title: 'Rivendica profilo',
+                              path: '/workspace/bands/${widget.bandId}/claim',
+                              fields: claimFields,
+                            ),
+                          );
+                        },
+                      ),
+                      ListTile(
+                        title: const Text('Apri la mia dashboard'),
+                        onTap: () {
+                          Navigator.pop(sheet);
+                          openPage(context, const DashboardScreen());
+                        },
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            },
+          ),
+        ],
+      ),
       body: loading
           ? const Center(child: CircularProgressIndicator())
           : error != null
@@ -202,6 +256,12 @@ class _BandBody extends StatelessWidget {
     addLink('Facebook', band.socials['facebook']);
     addLink('YouTube', band.socials['youtube']);
     addLink('Spotify', band.socials['spotify']);
+    for (final track in band.tracks) {
+      addLink(
+        track['title']?.toString() ?? 'Ascolta brano',
+        track['url']?.toString(),
+      );
+    }
     addLink('SoundCloud', band.socials['soundcloud']);
     addLink('Bandcamp', band.socials['bandcamp']);
 

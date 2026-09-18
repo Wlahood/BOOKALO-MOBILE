@@ -16,7 +16,6 @@ class EventsRepository {
   Future<List<EventListItem>> fetchVenueUpcomingEvents({
     required int venueId,
     required String startDate, // YYYY-MM-DD
-    required String endDate, // YYYY-MM-DD
     int perPage = 20,
   }) async {
     final json = await api.getJson(
@@ -24,7 +23,7 @@ class EventsRepository {
       query: {
         'venue_id': venueId.toString(),
         'start_date': startDate,
-        'end_date': endDate,
+        'upcoming': '1',
         'per_page': perPage.toString(),
       },
     );
@@ -35,7 +34,6 @@ class EventsRepository {
   Future<List<EventListItem>> fetchBandUpcomingEvents({
     required int bandId,
     required String startDate, // YYYY-MM-DD
-    required String endDate, // YYYY-MM-DD
     int perPage = 20,
   }) async {
     final json = await api.getJson(
@@ -43,7 +41,7 @@ class EventsRepository {
       query: {
         'band_id': bandId.toString(),
         'start_date': startDate,
-        'end_date': endDate,
+        'upcoming': '1',
         'per_page': perPage.toString(),
       },
     );

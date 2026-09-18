@@ -45,7 +45,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
       if (!mounted) return;
       setState(() => error = e.toString());
     } finally {
-      setState(() => loading = false);
+      if (mounted) setState(() => loading = false);
     }
   }
 
@@ -74,7 +74,8 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
 
     if (queryParts.isEmpty) return;
 
-    final query = queryParts.join(', ');
+    final query =
+        e.effectiveLocation['maps_query']?.toString() ?? queryParts.join(', ');
     final uri = Uri.parse(
       'https://www.google.com/maps/search/?api=1&query=${Uri.encodeComponent(query)}',
     );
@@ -185,6 +186,23 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
               const SizedBox(height: 16),
             ],
             Text(e.title, style: Theme.of(context).textTheme.headlineSmall),
+            if (e.effectiveLocation['has_custom_location'] == true)
+              Padding(
+                padding: const EdgeInsets.symmetric(vertical: 12),
+                child: Text(
+                  [
+                    e.effectiveLocation['name'],
+                    e.effectiveLocation['address'],
+                    e.effectiveLocation['city'],
+                  ].where((v) => v != null).join(', '),
+                ),
+              ),
+            if (e.calendarUrl != null)
+              TextButton.icon(
+                onPressed: () => openUrl(e.calendarUrl!),
+                icon: const Icon(Icons.event_available),
+                label: const Text('Aggiungi al calendario'),
+              ),
             const SizedBox(height: 8),
             if (e.start != null)
               Row(
@@ -193,7 +211,7 @@ class _EventDetailScreenState extends State<EventDetailScreen> {
                   const SizedBox(width: 8),
                   Expanded(
                     child: Text(
-                      _formatDateOnly(e.start),
+                      '${_formatDateOnly(e.start)} ${e.start!.hour.toString().padLeft(2, '0')}:${e.start!.minute.toString().padLeft(2, '0')}${e.end == null ? '' : ' – ${_formatDateOnly(e.end)} ${e.end!.hour.toString().padLeft(2, '0')}:${e.end!.minute.toString().padLeft(2, '0')}'}',
                       style: Theme.of(context).textTheme.bodyLarge,
                     ),
                   ),

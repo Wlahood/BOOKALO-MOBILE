@@ -22,6 +22,8 @@ class EventDetail {
   final String? posterImageUrl;
   final String? facebookUrl;
   final String? instagramUrl;
+  final Map<String, dynamic> effectiveLocation;
+  final String? calendarUrl;
 
   EventDetail({
     required this.id,
@@ -35,6 +37,8 @@ class EventDetail {
     required this.posterImageUrl,
     required this.facebookUrl,
     required this.instagramUrl,
+    this.effectiveLocation = const {},
+    this.calendarUrl,
   });
 
   factory EventDetail.fromJson(Map<String, dynamic> json) {
@@ -58,6 +62,10 @@ class EventDetail {
       posterImageUrl: json['poster_image_url']?.toString(),
       facebookUrl: json['facebook_url']?.toString(),
       instagramUrl: json['instagram_url']?.toString(),
+      effectiveLocation: Map<String, dynamic>.from(
+        json['effective_location'] ?? {},
+      ),
+      calendarUrl: json['links']?['calendar_url']?.toString(),
     );
   }
 }

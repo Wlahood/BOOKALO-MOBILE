@@ -9,6 +9,10 @@ class HomeResponse {
   final int? currentPage;
   final int? lastPage;
   final int? total;
+  final Map<String, dynamic> content;
+  final Map<String, dynamic> stats;
+  final List<Map<String, dynamic>> featuredBands;
+  final List<Map<String, dynamic>> featuredVenues;
 
   const HomeResponse({
     required this.range,
@@ -18,6 +22,10 @@ class HomeResponse {
     this.currentPage,
     this.lastPage,
     this.total,
+    this.content = const {},
+    this.stats = const {},
+    this.featuredBands = const [],
+    this.featuredVenues = const [],
   });
 
   factory HomeResponse.fromJson(Map<String, dynamic> json) {
@@ -40,9 +48,21 @@ class HomeResponse {
             (e) => EventListItem.fromJson((e as Map).cast<String, dynamic>()),
           )
           .toList(),
-      currentPage: _asInt(eventsBlock['current_page']),
-      lastPage: _asInt(eventsBlock['last_page']),
-      total: _asInt(eventsBlock['total']),
+      currentPage: _asInt(
+        eventsBlock['meta']?['current_page'] ?? eventsBlock['current_page'],
+      ),
+      lastPage: _asInt(
+        eventsBlock['meta']?['last_page'] ?? eventsBlock['last_page'],
+      ),
+      total: _asInt(eventsBlock['meta']?['total'] ?? eventsBlock['total']),
+      content: Map<String, dynamic>.from(data['home_content'] ?? {}),
+      stats: Map<String, dynamic>.from(data['stats'] ?? {}),
+      featuredBands: (data['featured_bands'] as List? ?? [])
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList(),
+      featuredVenues: (data['featured_venues'] as List? ?? [])
+          .map((e) => Map<String, dynamic>.from(e))
+          .toList(),
     );
   }
 }

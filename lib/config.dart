@@ -2,3 +2,8 @@ const apiBaseUrl = String.fromEnvironment(
   'API_BASE_URL',
   defaultValue: 'http://10.0.2.2:8090/api/v1',
 );
+
+const webBaseUrl = String.fromEnvironment(
+  'WEB_BASE_URL',
+  defaultValue: 'http://10.0.2.2:8090',
+);
